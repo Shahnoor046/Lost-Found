@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lost & Found - Reconnect with Your Belongings</title>
+  <meta name="description" content="A modern Lost and Found portal to report lost items and reconnect with owners quickly and safely.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-compass"></i>
+        </div>
+        <div class="brand-text">
+          <h1>Lost <span>&</span> Found</h1>
+          <span class="brand-tagline">Community Recovery Portal</span>
+        </div>
+      </div>
+
+      <!-- SEARCH BAR -->
+      <div class="search-wrapper">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="Search by item name, category, or location..."
+          aria-label="Search lost items"
+        >
+        <button id="clearSearchBtn" class="clear-search-btn" title="Clear Search" style="display: none;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- ADD ITEM BUTTON -->
+      <div class="nav-actions">
+        <button id="openModalBtn" class="btn btn-primary">
+          <i class="fa-solid fa-plus"></i>
+          <span>Add Lost Item</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="main-content">
+
+    <!-- HERO / BANNER BAR -->
+    <section class="hero-banner">
+      <div class="hero-text">
+        <h2>Lost Something Important?</h2>
+        <p>Report lost belongings or browse recent community reports to help items find their way home.</p>
+      </div>
+      <div class="stats-pill">
+        <i class="fa-solid fa-layer-group"></i>
+        <span id="itemCountDisplay">Loading items...</span>
+      </div>
+    </section>
+
+    <!-- CATEGORY FILTER CHIPS -->
+    <section class="category-section">
+      <div class="category-scroll">
+        <button class="chip active" data-category="all">
+          <i class="fa-solid fa-grid-2"></i> All Categories
+        </button>
+        <button class="chip" data-category="Electronics">
+          <i class="fa-solid fa-laptop"></i> Electronics
+        </button>
+        <button class="chip" data-category="Keys">
+          <i class="fa-solid fa-key"></i> Keys
+        </button>
+        <button class="chip" data-category="Wallet & Purse">
+          <i class="fa-solid fa-wallet"></i> Wallet & Purse
+        </button>
+        <button class="chip" data-category="Documents & ID">
+          <i class="fa-solid fa-id-card"></i> Documents & ID
+        </button>
+        <button class="chip" data-category="Pets">
+          <i class="fa-solid fa-paw"></i> Pets
+        </button>
+        <button class="chip" data-category="Clothing & Accessories">
+          <i class="fa-solid fa-shirt"></i> Clothing
+        </button>
+        <button class="chip" data-category="Others">
+          <i class="fa-solid fa-box-open"></i> Others
+        </button>
+      </div>
+    </section>
+
+    <!-- FIREBASE NOTICE / DEMO BANNER (If config is default) -->
+    <div id="firebaseNotice" class="firebase-notice" style="display: none;">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <div class="notice-text">
+        <strong>Firebase Configuration Needed:</strong> You are viewing sample items. Update <code>firebase.js</code> with your Firebase project credentials to sync live data and images with Firestore and Firebase Storage.
+      </div>
+      <button id="closeNoticeBtn" class="close-notice">&times;</button>
+    </div>
+
+    <!-- CARDS GRID SECTION -->
+    <section class="cards-section">
+      <div id="itemsGrid" class="items-grid">
+        <!-- Item cards injected dynamically via JavaScript -->
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div id="emptyState" class="empty-state" style="display: none;">
+        <div class="empty-icon">
+          <i class="fa-solid fa-box-open"></i>
+        </div>
+        <h3>No Lost Items Found</h3>
+        <p id="emptyStateText">There are no reports matching your search or filter options.</p>
+        <button id="resetSearchBtn" class="btn btn-secondary">
+          <i class="fa-solid fa-rotate-left"></i> Reset Search
+        </button>
+      </div>
+
+      <!-- INITIAL LOADING SPINNER -->
+      <div id="initialLoader" class="initial-loader">
+        <div class="spinner-ring"></div>
+        <p>Fetching reported items...</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ADD LOST ITEM MODAL -->
+  <div id="itemModal" class="modal-overlay" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <div class="modal-icon">
+            <i class="fa-solid fa-file-circle-plus"></i>
+          </div>
+          <div>
+            <h2>Report Lost Item</h2>
+            <p>Fill in the details to publish your lost item report</p>
+          </div>
+        </div>
+        <button id="closeModalBtn" class="modal-close" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <form id="addItemForm" class="modal-body" novalidate>
+        <div class="form-grid">
+          
+          <!-- ITEM NAME -->
+          <div class="form-group full-width">
+            <label for="itemName">
+              Item Name <span class="required">*</span>
+            </label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-tag input-icon"></i>
+              <input 
+                type="text" 
+                id="itemName" 
+                name="itemName" 
+                placeholder="e.g. Black Leather Wallet, Silver Watch" 
+                required
+              >
+            </div>
+            <span class="error-msg" id="itemNameError"></span>
+          </div>
+
+          <!-- CATEGORY DROPDOWN -->
+          <div class="form-group">
+            <label for="category">
+              Category <span class="required">*</span>
+            </label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-layer-group input-icon"></i>
+              <select id="category" name="category" required>
+                <option value="" disabled selected>Select Category</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Keys">Keys</option>
+                <option value="Wallet & Purse">Wallet & Purse</option>
+                <option value="Documents & ID">Documents & ID</option>
+                <option value="Pets">Pets</option>
+                <option value="Clothing & Accessories">Clothing & Accessories</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+            <span class="error-msg" id="categoryError"></span>
+          </div>
+
+          <!-- DATE LOST -->
+          <div class="form-group">
+            <label for="date">
+              Date Lost <span class="required">*</span>
+            </label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-calendar-days input-icon"></i>
+              <input 
+                type="date" 
+                id="date" 
+                name="date" 
+                required
+              >
+            </div>
+            <span class="error-msg" id="dateError"></span>
+          </div>
+
+          <!-- LOCATION -->
+          <div class="form-group">
+            <label for="location">
+              Lost Location <span class="required">*</span>
+            </label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-location-dot input-icon"></i>
+              <input 
+                type="text" 
+                id="location" 
+                name="location" 
+                placeholder="e.g. Central Library 2nd Floor, Park Street" 
+                required
+              >
+            </div>
+            <span class="error-msg" id="locationError"></span>
+          </div>
+
+          <!-- CONTACT NUMBER -->
+          <div class="form-group">
+            <label for="phone">
+              Contact Number <span class="required">*</span>
+            </label>
+            <div class="input-wrapper">
+              <i class="fa-solid fa-phone input-icon"></i>
+              <input 
+                type="tel" 
+                id="phone" 
+                name="phone" 
+                placeholder="e.g. +1 555 019 2834" 
+                required
+              >
+            </div>
+            <span class="error-msg" id="phoneError"></span>
+          </div>
+
+          <!-- DESCRIPTION -->
+          <div class="form-group full-width">
+            <label for="description">
+              Description <span class="required">*</span>
+            </label>
+            <div class="input-wrapper textarea-wrapper">
+              <i class="fa-solid fa-align-left input-icon"></i>
+              <textarea 
+                id="description" 
+                name="description" 
+                rows="3" 
+                placeholder="Provide distinctive features, brand name, colors, or marks to help verify ownership..." 
+                required
+              ></textarea>
+            </div>
+            <span class="error-msg" id="descriptionError"></span>
+          </div>
+
+          <!-- IMAGE UPLOAD FILE DROPZONE -->
+          <div class="form-group full-width">
+            <label for="imageUpload">
+              Upload Image <span class="required">*</span>
+            </label>
+            
+            <div class="file-dropzone" id="dropzone">
+              <input type="file" id="imageUpload" name="imageUpload" accept="image/*" required class="file-input">
+              <div class="dropzone-content" id="dropzoneContent">
+                <div class="upload-icon">
+                  <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <div class="upload-text">
+                  <strong>Click to upload</strong> or drag & drop photo here
+                </div>
+                <p class="upload-hint">PNG, JPG, WEBP or GIF up to 5MB</p>
+              </div>
+
+              <!-- PREVIEW CONTAINER -->
+              <div class="preview-container" id="previewContainer" style="display: none;">
+                <img id="imagePreview" src="" alt="Selected Image Preview">
+                <button type="button" id="removeImageBtn" class="remove-img-btn" title="Remove image">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+            <span class="error-msg" id="imageError"></span>
+          </div>
+
+        </div>
+
+        <!-- MODAL FOOTER BUTTONS -->
+        <div class="modal-footer">
+          <button type="button" id="cancelModalBtn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="submitItemBtn" class="btn btn-primary">
+            <span class="btn-text">Submit Report</span>
+            <div class="btn-spinner" id="btnSpinner" style="display: none;">
+              <div class="spinner-small"></div>
+              <span>Uploading & Saving...</span>
+            </div>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <i class="fa-solid fa-compass"></i>
+        <span>Lost & Found Community Portal</span>
+      </div>
+      <p class="footer-copy">&copy; 2026 Lost & Found Application. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Firebase SDKs (Compat mode for direct file:// & http:// support) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+  <!-- Application Scripts -->
+  <script src="firebase.js"></script>
+  <script src="app.js"></script>
+  <script>
+    setTimeout(() => {
+      const loader = document.getElementById("initialLoader");
+      if (loader && loader.style.display !== "none") {
+        loader.style.display = "none";
+      }
+    }, 600);
+  </script>
+</body>
+</html>
